@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA 篮球数据深度分析 · 从全明星传奇到三分革命</title>
+    <meta name="description" content="NBA篮球数据可视化分析 - 全明星球员入选统计、三分球趋势、球队攻防效率与王朝兴衰">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: #0a0e1a;
+            color: #e0e6f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(251, 146, 60, 0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 75% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 55% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(59, 130, 246, 0.15));
+            border: 1px solid rgba(251, 146, 60, 0.3);
+            border-radius: 50px;
+            padding: 6px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #fb923c;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #fb923c 50%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #8892a8;
+            font-weight: 300;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Stats Overview */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .stat-card:nth-child(1)::before {
+            background: linear-gradient(90deg, #fb923c, #f97316);
+        }
+
+        .stat-card:nth-child(2)::before {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+
+        .stat-card:nth-child(3)::before {
+            background: linear-gradient(90deg, #a78bfa, #c084fc);
+        }
+
+        .stat-card:nth-child(4)::before {
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .stat-card:nth-child(1) .stat-value {
+            color: #fb923c;
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: #60a5fa;
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: #c084fc;
+        }
+
+        .stat-card:nth-child(4) .stat-value {
+            color: #4ade80;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out both;
+        }
+
+        .section:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .section:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .section:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .section:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .section-icon.orange {
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(249, 115, 22, 0.1));
+        }
+
+        .section-icon.blue {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.1));
+        }
+
+        .section-icon.purple {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(192, 132, 252, 0.1));
+        }
+
+        .section-icon.green {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(74, 222, 128, 0.1));
+        }
+
+        .section-icon.amber {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.1));
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f0f4f8;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        .chart-container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s ease;
+        }
+
+        .chart-container:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-box {
+            width: 100%;
+            height: 550px;
+        }
+
+        .chart-box-lg {
+            width: 100%;
+            height: 650px;
+        }
+
+        /* Two-col layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* Analysis Cards */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .analysis-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .analysis-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analysis-card p {
+            font-size: 14px;
+            color: #9ca3af;
+            line-height: 1.8;
+        }
+
+        .hl {
+            color: #fb923c;
+            font-weight: 600;
+        }
+
+        .hl-blue {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .hl-purple {
+            color: #c084fc;
+            font-weight: 600;
+        }
+
+        .hl-green {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .hl-red {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        /* Methodology */
+        .methodology {
+            background: linear-gradient(145deg, rgba(251, 146, 60, 0.05), rgba(59, 130, 246, 0.05));
+            border: 1px solid rgba(251, 146, 60, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .methodology h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fb923c;
+            margin-bottom: 10px;
+        }
+
+        .methodology p {
+            font-size: 13px;
+            color: #8892a8;
+            line-height: 1.8;
+        }
+
+        .formula {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #fb923c;
+            margin: 8px 0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0e1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(251, 146, 60, 0.1);
+            border-top-color: #fb923c;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .chart-box {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badge">🏀 NBA Basketball Data Analysis</div>
+            <h1>NBA 篮球数据深度分析</h1>
+            <p>基于 basketball_player_allstar.csv 与 basketball_teams.csv，探索全明星传奇、三分球革命与王朝兴衰</p>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview" id="statsOverview">
+            <div class="stat-card">
+                <div class="stat-value" id="statYears">-</div>
+                <div class="stat-label">跨越年代</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statAllstars">-</div>
+                <div class="stat-label">全明星球员</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statTeamSeasons">-</div>
+                <div class="stat-label">球队赛季数据</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statTopCount">-</div>
+                <div class="stat-label">最多入选次数</div>
+            </div>
+        </div>
+
+        <!-- Chart 1: Line/Area - Three Point Revolution -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon orange">📈</div>
+                <div>
+                    <div class="section-title">三分球革命 · 时代演变趋势</div>
+                    <div class="section-subtitle">3-Point Revolution — 联盟场均三分出手与命中变化 (1980–2008)</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-box-lg" id="lineChart"></div>
+            </div>
+        </section>
+
+        <!-- Chart 2: Rose Chart - All-Star Kings -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon purple">👑</div>
+                <div>
+                    <div class="section-title">全明星之王 · 入选次数 TOP 15</div>
+                    <div class="section-subtitle">All-Star Appearances — 南丁格尔玫瑰图展示历史入选次数最多的球员</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-box-lg" id="roseChart"></div>
+            </div>
+        </section>
+
+        <!-- Chart 3: Scatter - Team Offensive vs Win Rate -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon blue">🔮</div>
+                <div>
+                    <div class="section-title">进攻火力 vs 防守铁壁 · 胜率矩阵</div>
+                    <div class="section-subtitle">Offense vs Defense Matrix — 气泡大小代表胜率，X轴=场均得分，Y轴=场均失分 (2005赛季)</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-box-lg" id="scatterChart"></div>
+            </div>
+        </section>
+
+        <!-- Chart 4: Heatmap - Dynasty Teams -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon green">🏆</div>
+                <div>
+                    <div class="section-title">王朝兴衰 · 豪门球队年代胜率热力图</div>
+                    <div class="section-subtitle">Dynasty Heatmap — TOP 12 传统豪门各年代胜率表现 (1980s–2010s)</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-box-lg" id="heatmapChart"></div>
+            </div>
+        </section>
+
+        <!-- Analysis Section -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon amber">💡</div>
+                <div>
+                    <div class="section-title">深度分析洞察</div>
+                    <div class="section-subtitle">Key Insights — 数据背后的篮球故事</div>
+                </div>
+            </div>
+            <div class="analysis-grid" id="analysisGrid">
+                <div class="analysis-card">
+                    <h3>🎯 三分球革命重塑NBA</h3>
+                    <p>
+                        1980年三分线引入时，联盟场均三分出手仅 <span class="hl">2.0次</span>；
+                        到2008年已飙升至 <span class="hl">18.1次</span>，增长了 <span class="hl-red">9倍</span>。
+                        1994年是关键转折点——NBA缩短三分线距离，三分出手量从9.9次暴涨至15.3次。
+                        三分球彻底改变了篮球的空间与节奏。
+                    </p>
+                </div>
+                <div class="analysis-card">
+                    <h3>👑 贾巴尔——全明星之王</h3>
+                    <p>
+                        <span class="hl-purple">贾巴尔（Kareem Abdul-Jabbar）</span>以 <span class="hl-purple">19次</span>
+                        全明星入选高居榜首，
+                        其次是 <span class="hl-blue">Julius Erving（16次）</span>和 <span class="hl">Shaquille
+                            O'Neal（15次）</span>。
+                        在全明星赛中，贾巴尔累计贡献 <span class="hl-green">251分、53篮板、42助攻</span>，是全明星历史上最伟大的存在。
+                    </p>
+                </div>
+                <div class="analysis-card">
+                    <h3>⚔️ 进攻与防守的博弈</h3>
+                    <p>
+                        数据揭示了一个核心规律：<span class="hl-green">高胜率球队几乎都拥有低失分（≤95分/场）</span>。
+                        2005赛季中，<span class="hl">圣安东尼奥马刺</span>以场均仅 <span class="hl-blue">88.4失分</span> 高居防守榜首，
+                        而<span class="hl">菲尼克斯太阳</span>虽然场均 <span class="hl-red">110+得分</span>，但防守端的失分也较高。
+                        "防守赢得总冠军"在数据中得到完美印证。
+                    </p>
+                </div>
+                <div class="analysis-card">
+                    <h3>🏛️ 王朝更替的密码</h3>
+                    <p>
+                        热力图清晰展示NBA王朝更替脉络：
+                        <span class="hl">80年代</span>是湖人与凯尔特人争霸（胜率>71%），
+                        <span class="hl-purple">90年代</span>公牛王朝崛起（66%），爵士紧随其后（68.8%），
+                        <span class="hl-blue">2000年代</span>马刺崛起（69.9%）、小牛异军突起（68.7%），
+                        <span class="hl-green">2010年代</span>公牛与马刺双雄领跑（>75%）。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Methodology -->
+        <div class="methodology">
+            <h4>📐 分析方法论</h4>
+            <p>
+                <strong>数据来源：</strong>basketball_player_allstar.csv（1950-2009，1609条全明星记录）、basketball_teams.csv（1937-2011，1536个球队赛季数据）<br>
+                <strong>三分趋势分析：</strong>统计1980年以来每个赛季所有NBA球队的三分出手(o_3pa)与三分命中(o_3pm)，计算联盟场均值。<br>
+                <strong>攻防效率分析：</strong>选取2005赛季30支球队，计算场均得分(o_pts/games)、场均失分(d_pts/games)与胜率(won/games)。<br>
+                <strong>王朝热力图：</strong>按年代(1980s/1990s/2000s/2010s)计算各豪门球队的总胜率，<span class="formula">胜率 = 总胜场 / (总胜场 +
+                    总负场) × 100%</span><br>
+                筛选条件：仅计入单赛季出场数 ≥ 50场的完整赛季数据，确保统计有效性。
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>数据来源：basketball_player_allstar.csv & basketball_teams.csv · NBA Basketball Analysis · momo 数据分析任务</p>
+        </footer>
+    </div>
+
+    <script src="./chart1-three-point-revolution.js"></script>
+    <script src="./chart2-allstar-rose.js"></script>
+    <script src="./chart3-offense-defense-scatter.js"></script>
+    <script src="./chart4-dynasty-heatmap.js"></script>
+    <script>
+        // ==================== STATS ====================
+        document.getElementById('statYears').textContent = '1950-2011';
+        document.getElementById('statAllstars').textContent = '398';
+        document.getElementById('statTeamSeasons').textContent = '1,536';
+        document.getElementById('statTopCount').textContent = '19次';
+
+        // ==================== CHARTS INIT ====================
+        const lineChart = initThreePointRevolutionChart('lineChart');
+        const roseChart = initAllstarRoseChart('roseChart');
+        const scatterChart = initOffenseDefenseScatterChart('scatterChart');
+        const heatmapChart = initDynastyHeatmapChart('heatmapChart');
+
+        // ==================== RESPONSIVE ====================
+        window.addEventListener('resize', () => {
+            lineChart.resize();
+            roseChart.resize();
+            scatterChart.resize();
+            heatmapChart.resize();
+        });
+
+        // ==================== REMOVE LOADING ====================
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hide');
+        }, 600);
+    </script>
+</body>
+
+</html>
